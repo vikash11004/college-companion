@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4895ff">
+    <title>Assignments - College Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1>Assignments</h1>
+        </header>
+
+        <div class="assignments-list" id="assignments-list" style="margin-bottom: 100px;">
+            <div class="empty-state">
+                <div class="empty-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                <p>No assignments yet</p>
+                <p class="empty-subtitle">Add your first assignment using the + button</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <div class="floating-btn" id="add-btn">
+        <div class="fab-icon">+</div>
+    </div>
+
+    <!-- Assignment Form Modal -->
+    <div class="modal" id="assignment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Assignment</h2>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <form id="assignment-form">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" placeholder="Enter assignment title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" rows="3" placeholder="Assignment details (optional)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="due-date">Due Date (Optional)</label>
+                    <input type="date" id="due-date">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Assignment</button>
+            </form>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-grid">
+            <a href="index.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/home.png" alt="Home"></div>
+                Home
+            </a>
+            <a href="cgpa.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                CGPA
+            </a>
+            <a href="assignments.html" class="bottom-nav-item active">
+                <div class="bottom-nav-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                Tasks
+            </a>
+            <a href="timetable.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/timetable.png" alt="Timetable"></div>
+                Schedule
+            </a>
+            <a href="bunkometer.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/Bunkometer.png" alt="Bunkometer"></div>
+                Bunko
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // Simple localStorage wrapper
+        const storage = {
+            getAll: function(key) {
+                try {
+                    return JSON.parse(localStorage.getItem(key)) || [];
+                } catch {
+                    return [];
+                }
+            },
+            save: function(key, data) {
+                localStorage.setItem(key, JSON.stringify(data));
+            },
+            add: function(key, item) {
+                const items = this.getAll(key);
+                item.id = Date.now();
+                items.push(item);
+                this.save(key, items);
+            },
+            delete: function(key, id) {
+                const items = this.getAll(key);
+                const filtered = items.filter(item => item.id !== id);
+                this.save(key, filtered);
+            }
+        };
+
+        // Format date function
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // Flash message function
+        function showFlash(message, type = 'success') {
+            // Create flash element if it doesn't exist
+            let flash = document.getElementById('flash-message');
+            if (!flash) {
+                flash = document.createElement('div');
+                flash.id = 'flash-message';
+                flash.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: 500;
+                    z-index: 10000;
+                    transform: translateX(300px);
+                    transition: transform 0.3s ease;
+                `;
+                document.body.appendChild(flash);
+            }
+            
+            flash.textContent = message;
+            flash.style.backgroundColor = type === 'success' ? '#10B981' : '#EF4444';
+            flash.style.transform = 'translateX(0)';
+            
+            setTimeout(() => {
+                flash.style.transform = 'translateX(300px)';
+            }, 3000);
+        }
+
+        let assignments = [];
+
+        function loadAssignments() {
+            assignments = storage.getAll('assignments');
+            displayAssignments();
+        }
+
+        function displayAssignments() {
+            const listContainer = document.getElementById('assignments-list');
+            
+            if (assignments.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                        <p>No assignments yet</p>
+                        <p class="empty-subtitle">Add your first assignment using the + button</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const pendingAssignments = assignments.filter(a => a.status === 'pending');
+            const completedAssignments = assignments.filter(a => a.status === 'completed');
+
+            let html = '';
+            
+            if (pendingAssignments.length > 0) {
+                html += '<div class="section-title">Pending</div>';
+                pendingAssignments.forEach(assignment => {
+                    const isOverdue = assignment.due_date && new Date(assignment.due_date) < new Date();
+                    html += `
+                        <div class="assignment-item ${isOverdue ? 'overdue' : ''}">
+                            <div class="assignment-content">
+                                <h3>${assignment.title}</h3>
+                                ${assignment.description ? `<p>${assignment.description}</p>` : ''}
+                                ${assignment.due_date ? `<div class="due-date">Due: ${formatDate(assignment.due_date)}</div>` : ''}
+                                ${isOverdue ? '<div class="overdue-badge">OVERDUE</div>' : ''}
+                            </div>
+                            <button class="complete-btn" onclick="markComplete('${assignment.id}')">
+                                <span class="checkmark">✓</span>
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            if (completedAssignments.length > 0) {
+                html += '<div class="section-title">Completed</div>';
+                completedAssignments.forEach(assignment => {
+                    html += `
+                        <div class="assignment-item completed">
+                            <div class="assignment-content">
+                                <h3>${assignment.title}</h3>
+                                ${assignment.description ? `<p>${assignment.description}</p>` : ''}
+                                ${assignment.due_date ? `<div class="due-date">Due: ${formatDate(assignment.due_date)}</div>` : ''}
+                                <div class="completion-date">Completed: ${formatDate(assignment.completed_date)}</div>
+                            </div>
+                            <div class="completed-actions">
+                                <button class="action-btn restore-btn" onclick="restoreAssignment('${assignment.id}')" title="Move back to pending">
+                                    ↶
+                                </button>
+                                <button class="action-btn delete-btn" onclick="deleteAssignment('${assignment.id}')" title="Delete assignment">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            listContainer.innerHTML = html;
+        }
+
+        function markComplete(assignmentId) {
+            assignments = assignments.map(assignment => 
+                assignment.id == assignmentId 
+                    ? {...assignment, status: 'completed', completed_date: new Date().toISOString()}
+                    : assignment
+            );
+            storage.save('assignments', assignments);
+            displayAssignments();
+            showFlash('Assignment marked as complete!');
+        }
+
+        function restoreAssignment(assignmentId) {
+            assignments = assignments.map(assignment => 
+                assignment.id == assignmentId 
+                    ? {...assignment, status: 'pending', completed_date: null}
+                    : assignment
+            );
+            storage.save('assignments', assignments);
+            displayAssignments();
+            showFlash('Assignment moved back to pending!');
+        }
+
+        function deleteAssignment(assignmentId) {
+            if (confirm('Are you sure you want to delete this assignment? This action cannot be undone.')) {
+                assignments = assignments.filter(assignment => assignment.id != assignmentId);
+                storage.save('assignments', assignments);
+                displayAssignments();
+                showFlash('Assignment deleted successfully!', 'success');
+            }
+        }
+
+        function addAssignment(title, description, dueDate) {
+            const newAssignment = {
+                id: Date.now(),
+                title,
+                description: description || '',
+                due_date: dueDate || null,
+                status: 'pending',
+                created_date: new Date().toISOString()
+            };
+            
+            assignments.push(newAssignment);
+            storage.save('assignments', assignments);
+            displayAssignments();
+            showFlash('Assignment added successfully!');
+        }
+
+        // Modal handling
+        document.getElementById('add-btn').addEventListener('click', () => {
+            document.getElementById('assignment-modal').classList.add('active');
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('assignment-modal').classList.remove('active');
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('assignment-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('assignment-modal')) {
+                document.getElementById('assignment-modal').classList.remove('active');
+            }
+        });
+
+        document.getElementById('assignment-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const dueDate = document.getElementById('due-date').value;
+            
+            addAssignment(title, description, dueDate);
+            
+            // Reset form
+            e.target.reset();
+            document.getElementById('assignment-modal').classList.remove('active');
+        });
+
+        // Load assignments on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAssignments();
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

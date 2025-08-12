@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, i        function initializePositioning(isEdit = false) {
+            const image = document.getElementById('position-image');
+            const preview = document.getElementById('position-preview');
+            
+            // If editing, try to restore previous position
+            if (isEdit) {
+                const savedPosition = localStorage.getItem('timetable-position');
+                if (savedPosition) {
+                    const position = JSON.parse(savedPosition);
+                    image.style.left = position.left + 'px';
+                    image.style.top = position.top + 'px';
+                } else {
+                    // Default center position
+                    image.style.left = '0px';
+                    image.style.top = '0px';
+                }
+            } else {
+                // Reset position to center for new uploads
+                image.style.left = '0px';
+                image.style.top = '0px';
+            }
+            
+            // Add drag functionality
+            image.addEventListener('mousedown', startDrag);
+            image.addEventListener('touchstart', startDrag, { passive: false });
+            
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('touchmove', handleDrag, { passive: false });
+            
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+        }user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4895ff">
+    <title>Timetable - College Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1>Timetable</h1>
+        </header>
+
+        <!-- Timetable Display Section -->
+        <div class="timetable-container">
+            <div class="no-timetable" id="no-timetable">
+                <div class="upload-area">
+                    <div class="upload-icon"><img src="favicons/timetable.png" alt="Timetable"></div>
+                    <h3>Upload Your Timetable</h3>
+                    <p>Upload a photo of your class schedule for easy access</p>
+                    <input type="file" id="timetable-upload" accept="image/*" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('timetable-upload').click()">
+                        <img src="favicons/camera.png" alt="Camera" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px;"> Choose Photo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crop Modal -->
+        <div class="modal" id="crop-modal">
+            <div class="modal-content crop-modal-content">
+                <div class="modal-header">
+                    <h2>Crop Your Timetable</h2>
+                </div>
+                <div class="crop-container">
+                    <div class="crop-area" id="crop-area">
+                        <img id="crop-image" alt="Image to crop">
+                        <div class="crop-overlay" id="crop-overlay">
+                            <div class="crop-box" id="crop-box">
+                                <div class="crop-handle nw" data-direction="nw"></div>
+                                <div class="crop-handle ne" data-direction="ne"></div>
+                                <div class="crop-handle sw" data-direction="sw"></div>
+                                <div class="crop-handle se" data-direction="se"></div>
+                                <div class="crop-handle n" data-direction="n"></div>
+                                <div class="crop-handle s" data-direction="s"></div>
+                                <div class="crop-handle w" data-direction="w"></div>
+                                <div class="crop-handle e" data-direction="e"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="crop-preview">
+                        <h4>Preview</h4>
+                        <div class="preview-box" id="preview-box">
+                            <canvas id="preview-canvas" width="300" height="112"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="crop-actions">
+                    <button class="btn btn-secondary" onclick="resetCrop()">Reset Crop</button>
+                    <button class="btn btn-primary" onclick="applyCrop()">Save Timetable</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Card -->
+        <div class="instructions-card">
+            <h3><img src="favicons/tips.png" alt="Tips" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"> Tips</h3>
+            <ul>
+                <li>Take a clear photo of your timetable</li>
+                <li>Make sure the text is readable</li>
+                <li>The image will be stored locally on your device</li>
+                <li>You can replace the timetable anytime</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let cropData = {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0
+        };
+        let isDragging = false;
+        let isResizing = false;
+        let currentHandle = null;
+        let startX, startY;
+
+        function uploadTimetable() {
+            console.log('Upload timetable called');
+            const fileInput = document.getElementById('timetable-upload');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                console.log('No file selected');
+                showFlash('Please select a file first', 'error');
+                return;
+            }
+            
+            console.log('File selected:', file.name, file.type);
+            
+            if (!file.type.startsWith('image/')) {
+                console.log('Invalid file type');
+                showFlash('Please select a valid image file', 'error');
+                return;
+            }
+            
+            console.log('Starting to read file...');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                console.log('File read successfully');
+                // Store the original image for cropping
+                localStorage.setItem('timetable-original', e.target.result);
+                showCropModal(e.target.result);
+            };
+            reader.onerror = function(e) {
+                console.error('Error reading file:', e);
+                showFlash('Error reading file', 'error');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showCropModal(imageSrc) {
+            const modal = document.getElementById('crop-modal');
+            const cropImage = document.getElementById('crop-image');
+            
+            if (!modal || !cropImage) {
+                console.error('Modal or crop image not found');
+                return;
+            }
+            
+            cropImage.src = imageSrc;
+            
+            // Use inline styles for Android WebView compatibility
+            modal.style.display = 'flex';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.backgroundColor = 'rgba(248, 249, 250, 0.98)';
+            modal.style.zIndex = '2000';
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            
+            cropImage.onload = function() {
+                console.log('Image loaded, initializing crop');
+                initializeCrop();
+            };
+        }
+
+        function initializeCrop() {
+            console.log('Initializing crop...');
+            const cropArea = document.getElementById('crop-area');
+            const cropBox = document.getElementById('crop-box');
+            const cropImage = document.getElementById('crop-image');
+            
+            if (!cropArea || !cropBox || !cropImage) {
+                console.error('Crop elements not found');
+                return;
+            }
+            
+            // Wait a moment for the image to be fully rendered
+            setTimeout(() => {
+                // Set initial crop area to center 80% of image
+                const imageRect = cropImage.getBoundingClientRect();
+                console.log('Image dimensions:', imageRect.width, 'x', imageRect.height);
+                
+                if (imageRect.width === 0 || imageRect.height === 0) {
+                    console.error('Image not loaded properly');
+                    return;
+                }
+                
+                const initialWidth = Math.min(imageRect.width * 0.8, 400);
+                const initialHeight = initialWidth * (150 / 800); // Maintain aspect ratio for 150px height
+                
+                cropData.x = (imageRect.width - initialWidth) / 2;
+                cropData.y = (imageRect.height - initialHeight) / 2;
+                cropData.width = initialWidth;
+                cropData.height = initialHeight;
+                
+                console.log('Initial crop data:', cropData);
+                
+                updateCropBox();
+                updatePreview();
+                
+                // Add event listeners for crop interaction
+                cropBox.addEventListener('mousedown', startCropDrag);
+                cropBox.addEventListener('touchstart', startCropDrag, { passive: false });
+                
+                // Add resize handles
+                const handles = cropBox.querySelectorAll('.crop-handle');
+                handles.forEach(handle => {
+                    handle.addEventListener('mousedown', startResize);
+                    handle.addEventListener('touchstart', startResize, { passive: false });
+                });
+                
+                document.addEventListener('mousemove', handleCropMove);
+                document.addEventListener('touchmove', handleCropMove, { passive: false });
+                document.addEventListener('mouseup', stopCropInteraction);
+                document.addEventListener('touchend', stopCropInteraction);
+            }, 100);
+        }
+
+        function updateCropBox() {
+            const cropBox = document.getElementById('crop-box');
+            const cropOverlay = document.getElementById('crop-overlay');
+            
+            cropBox.style.left = cropData.x + 'px';
+            cropBox.style.top = cropData.y + 'px';
+            cropBox.style.width = cropData.width + 'px';
+            cropBox.style.height = cropData.height + 'px';
+            
+            // Update overlay to show only selected area
+            cropOverlay.style.background = `
+                linear-gradient(transparent ${cropData.y}px, rgba(0,0,0,0.4) ${cropData.y}px, rgba(0,0,0,0.4) ${cropData.y + cropData.height}px, transparent ${cropData.y + cropData.height}px),
+                linear-gradient(90deg, rgba(0,0,0,0.4) ${cropData.x}px, transparent ${cropData.x}px, transparent ${cropData.x + cropData.width}px, rgba(0,0,0,0.4) ${cropData.x + cropData.width}px)
+            `;
+        }
+
+        function startCropDrag(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            isDragging = true;
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            startX = clientX - cropData.x;
+            startY = clientY - cropData.y;
+        }
+
+        function startResize(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            isResizing = true;
+            currentHandle = e.target.dataset.direction;
+            
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            startX = clientX;
+            startY = clientY;
+        }
+
+        function handleCropMove(e) {
+            if (!isDragging && !isResizing) return;
+            
+            e.preventDefault();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            
+            const cropImage = document.getElementById('crop-image');
+            const imageRect = cropImage.getBoundingClientRect();
+            
+            if (isDragging) {
+                // Move the crop box
+                cropData.x = Math.max(0, Math.min(clientX - startX, imageRect.width - cropData.width));
+                cropData.y = Math.max(0, Math.min(clientY - startY, imageRect.height - cropData.height));
+            } else if (isResizing && currentHandle) {
+                // Resize the crop box
+                const deltaX = clientX - startX;
+                const deltaY = clientY - startY;
+                
+                const minSize = 50;
+                
+                if (currentHandle.includes('e')) {
+                    cropData.width = Math.max(minSize, Math.min(cropData.width + deltaX, imageRect.width - cropData.x));
+                }
+                if (currentHandle.includes('w')) {
+                    const newWidth = cropData.width - deltaX;
+                    const newX = cropData.x + deltaX;
+                    if (newWidth >= minSize && newX >= 0) {
+                        cropData.width = newWidth;
+                        cropData.x = newX;
+                    }
+                }
+                if (currentHandle.includes('s')) {
+                    cropData.height = Math.max(minSize, Math.min(cropData.height + deltaY, imageRect.height - cropData.y));
+                }
+                if (currentHandle.includes('n')) {
+                    const newHeight = cropData.height - deltaY;
+                    const newY = cropData.y + deltaY;
+                    if (newHeight >= minSize && newY >= 0) {
+                        cropData.height = newHeight;
+                        cropData.y = newY;
+                    }
+                }
+                
+                startX = clientX;
+                startY = clientY;
+            }
+            
+            updateCropBox();
+            updatePreview();
+        }
+
+        function stopCropInteraction() {
+            isDragging = false;
+            isResizing = false;
+            currentHandle = null;
+        }
+
+        function updatePreview() {
+            const cropImage = document.getElementById('crop-image');
+            const canvas = document.getElementById('preview-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!cropImage || !canvas || !ctx) {
+                console.error('Preview elements not found');
+                return;
+            }
+            
+            // Update canvas dimensions to match crop area aspect ratio
+            const aspectRatio = cropData.width / cropData.height;
+            const maxPreviewWidth = 300;
+            const maxPreviewHeight = 200;
+            
+            let previewWidth, previewHeight;
+            
+            if (aspectRatio > maxPreviewWidth / maxPreviewHeight) {
+                // Crop is wider - fit to width
+                previewWidth = maxPreviewWidth;
+                previewHeight = maxPreviewWidth / aspectRatio;
+            } else {
+                // Crop is taller - fit to height
+                previewHeight = maxPreviewHeight;
+                previewWidth = maxPreviewHeight * aspectRatio;
+            }
+            
+            canvas.width = previewWidth;
+            canvas.height = previewHeight;
+            canvas.style.width = previewWidth + 'px';
+            canvas.style.height = previewHeight + 'px';
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Get the scale factor between displayed image and natural image
+            const displayedWidth = cropImage.offsetWidth;
+            const displayedHeight = cropImage.offsetHeight;
+            const naturalWidth = cropImage.naturalWidth;
+            const naturalHeight = cropImage.naturalHeight;
+            
+            const scaleX = naturalWidth / displayedWidth;
+            const scaleY = naturalHeight / displayedHeight;
+            
+            // Convert crop coordinates to natural image coordinates
+            const sourceX = cropData.x * scaleX;
+            const sourceY = cropData.y * scaleY;
+            const sourceWidth = cropData.width * scaleX;
+            const sourceHeight = cropData.height * scaleY;
+            
+            console.log('Preview - Crop data:', cropData);
+            console.log('Preview - Scale factors:', scaleX, scaleY);
+            console.log('Preview - Source coords:', sourceX, sourceY, sourceWidth, sourceHeight);
+            
+            // Draw the exact cropped portion from the natural image
+            try {
+                ctx.drawImage(
+                    cropImage,
+                    sourceX, sourceY, sourceWidth, sourceHeight,
+                    0, 0, canvas.width, canvas.height
+                );
+            } catch (error) {
+                console.error('Error drawing preview:', error);
+            }
+        }
+
+        function resetCrop() {
+            const cropImage = document.getElementById('crop-image');
+            const imageRect = cropImage.getBoundingClientRect();
+            
+            // Reset to center 80%
+            const initialWidth = Math.min(imageRect.width * 0.8, 400);
+            const initialHeight = initialWidth * (150 / 800);
+            
+            cropData.x = (imageRect.width - initialWidth) / 2;
+            cropData.y = (imageRect.height - initialHeight) / 2;
+            cropData.width = initialWidth;
+            cropData.height = initialHeight;
+            
+            updateCropBox();
+            updatePreview();
+        }
+
+        function applyCrop() {
+            const cropImage = document.getElementById('crop-image');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Get the scale factor between displayed image and natural image
+            const displayedWidth = cropImage.offsetWidth;
+            const displayedHeight = cropImage.offsetHeight;
+            const naturalWidth = cropImage.naturalWidth;
+            const naturalHeight = cropImage.naturalHeight;
+            
+            const scaleX = naturalWidth / displayedWidth;
+            const scaleY = naturalHeight / displayedHeight;
+            
+            // Convert crop coordinates to natural image coordinates
+            const sourceX = cropData.x * scaleX;
+            const sourceY = cropData.y * scaleY;
+            const sourceWidth = cropData.width * scaleX;
+            const sourceHeight = cropData.height * scaleY;
+            
+            console.log('Apply crop - Natural size:', naturalWidth, 'x', naturalHeight);
+            console.log('Apply crop - Displayed size:', displayedWidth, 'x', displayedHeight);
+            console.log('Apply crop - Scale factors:', scaleX, scaleY);
+            console.log('Apply crop - Source coords:', sourceX, sourceY, sourceWidth, sourceHeight);
+            
+            // Set canvas size to actual crop dimensions (in natural image pixels)
+            canvas.width = sourceWidth;
+            canvas.height = sourceHeight;
+            
+            // Draw the cropped image onto the canvas at actual size
+            ctx.drawImage(
+                cropImage,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                0, 0, canvas.width, canvas.height
+            );
+            
+            const croppedImageData = canvas.toDataURL('image/png', 0.9);
+            
+            // Save the cropped image and dimensions
+            localStorage.setItem('timetable', croppedImageData);
+            localStorage.setItem('timetable-dimensions', JSON.stringify({
+                width: sourceWidth,
+                height: sourceHeight
+            }));
+            
+            closeCropModal();
+            showFlash('Timetable saved successfully! Redirecting to home...');
+            
+            // Update home page preview
+            updateHomePreview();
+            
+            // Redirect to home page after 1 second
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+
+        function updateHomePreview() {
+            // This will be called to update the home page timetable preview
+            const savedTimetable = localStorage.getItem('timetable');
+            if (savedTimetable && window.parent && window.parent.loadTimetablePreview) {
+                window.parent.loadTimetablePreview();
+            }
+        }
+
+        function closeCropModal() {
+            const modal = document.getElementById('crop-modal');
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function updateHomePreview() {
+            // This will be called to update the home page timetable preview
+            const savedTimetable = localStorage.getItem('timetable');
+            if (savedTimetable && window.parent && window.parent.loadTimetablePreview) {
+                window.parent.loadTimetablePreview();
+            }
+        }
+
+        function closeCropModal() {
+            const modal = document.getElementById('crop-modal');
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function removeTimetable() {
+            if (confirm('Are you sure you want to remove the timetable?')) {
+                localStorage.removeItem('timetable');
+                showFlash('Timetable removed successfully!');
+            }
+        }
+
+        function showFlash(message, type = 'success') {
+            const flash = document.createElement('div');
+            flash.className = `flash-message flash-${type}`;
+            flash.textContent = message;
+            document.body.appendChild(flash);
+
+            setTimeout(() => {
+                flash.style.opacity = '1';
+            }, 10);
+
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 300);
+            }, 3000);
+        }
+
+        // Handle file input change
+        document.getElementById('timetable-upload').addEventListener('change', uploadTimetable);
+    </script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4895ff">
+    <title>CGPA Tracker - College Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1>CGPA Calculator</h1>
+        </header>
+
+        <!-- Results Card -->
+        <div class="results-card">
+            <div class="cgpa-display">
+                <div class="cgpa-value" id="cgpa-display">0.00</div>
+                <div class="cgpa-label">Current CGPA</div>
+            </div>
+            <div class="semester-count">
+                <div class="count-value" id="semester-count">0</div>
+                <div class="count-label">Semesters</div>
+            </div>
+        </div>
+
+        <!-- Semester Input Section -->
+        <div class="semester-input-card">
+            <h3>Add Semester SGPA</h3>
+            <form id="semester-form">
+                <div class="form-group">
+                    <label for="semester-sgpa">Semester <span id="next-semester-num">1</span> SGPA</label>
+                    <input type="number" id="semester-sgpa" min="0" max="10" step="0.01" placeholder="Enter SGPA (0-10)" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Semester</button>
+            </form>
+        </div>
+
+        <!-- Semesters List -->
+        <div class="semesters-list" id="semesters-list">
+            <div class="empty-state">
+                <div class="empty-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                <p>No semesters added yet</p>
+                <p class="empty-subtitle">Add your first semester SGPA above</p>
+            </div>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="reset-section">
+            <button class="btn btn-danger" onclick="resetAllData()">Reset All Data</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-grid">
+            <a href="index.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/home.png" alt="Home"></div>
+                Home
+            </a>
+            <a href="cgpa.html" class="bottom-nav-item active">
+                <div class="bottom-nav-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                CGPA
+            </a>
+            <a href="assignments.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                Tasks
+            </a>
+            <a href="timetable.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/timetable.png" alt="Timetable"></div>
+                Schedule
+            </a>
+            <a href="bunkometer.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/Bunkometer.png" alt="Bunkometer"></div>
+                Bunko
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // Simple flash message function
+        function showFlash(message, type = 'success') {
+            let flash = document.getElementById('flash-message');
+            if (!flash) {
+                flash = document.createElement('div');
+                flash.id = 'flash-message';
+                flash.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: 500;
+                    z-index: 10000;
+                    transform: translateX(300px);
+                    transition: transform 0.3s ease;
+                `;
+                document.body.appendChild(flash);
+            }
+            
+            flash.textContent = message;
+            flash.style.backgroundColor = type === 'success' ? '#10B981' : '#EF4444';
+            flash.style.transform = 'translateX(0)';
+            
+            setTimeout(() => {
+                flash.style.transform = 'translateX(300px)';
+            }, 3000);
+        }
+
+        let semesters = [];
+
+        function loadSemesters() {
+            semesters = JSON.parse(localStorage.getItem('cc_semesters') || '[]');
+            displaySemesters();
+            updateCGPA();
+        }
+
+        function displaySemesters() {
+            const listContainer = document.getElementById('semesters-list');
+            
+            if (semesters.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                        <p>No semesters added yet</p>
+                        <p class="empty-subtitle">Add your first semester SGPA above</p>
+                    </div>
+                `;
+                document.getElementById('next-semester-num').textContent = '1';
+                return;
+            }
+
+            document.getElementById('next-semester-num').textContent = semesters.length + 1;
+
+            let html = '<div class="semester-grid">';
+            semesters.forEach((semester, index) => {
+                html += `
+                    <div class="semester-item">
+                        <div class="semester-header">
+                            <h4>Semester ${index + 1}</h4>
+                            <button class="delete-btn" onclick="deleteSemester(${index})">&times;</button>
+                        </div>
+                        <div class="sgpa-value">${semester.sgpa}</div>
+                        <div class="sgpa-label">SGPA</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            listContainer.innerHTML = html;
+        }
+
+        function updateCGPA() {
+            if (semesters.length === 0) {
+                document.getElementById('cgpa-display').textContent = '0.00';
+                document.getElementById('semester-count').textContent = '0';
+                return;
+            }
+
+            const totalSGPA = semesters.reduce((sum, semester) => sum + parseFloat(semester.sgpa), 0);
+            const cgpa = (totalSGPA / semesters.length).toFixed(2);
+            
+            document.getElementById('cgpa-display').textContent = cgpa;
+            document.getElementById('semester-count').textContent = semesters.length;
+            
+            // Save CGPA to localStorage for easy access
+            localStorage.setItem('cc_cgpa', cgpa);
+        }
+
+        function addSemester(sgpa) {
+            const newSemester = {
+                sgpa: parseFloat(sgpa).toFixed(2),
+                semester_number: semesters.length + 1,
+                created_date: new Date().toISOString()
+            };
+            
+            semesters.push(newSemester);
+            localStorage.setItem('cc_semesters', JSON.stringify(semesters));
+            displaySemesters();
+            updateCGPA();
+            showFlash(`Semester ${newSemester.semester_number} SGPA added successfully!`);
+        }
+
+        function deleteSemester(index) {
+            if (confirm(`Are you sure you want to delete Semester ${index + 1}?`)) {
+                semesters.splice(index, 1);
+                // Renumber semesters
+                semesters.forEach((semester, i) => {
+                    semester.semester_number = i + 1;
+                });
+                localStorage.setItem('cc_semesters', JSON.stringify(semesters));
+                displaySemesters();
+                updateCGPA();
+                showFlash('Semester deleted successfully!');
+            }
+        }
+
+        function resetAllData() {
+            if (confirm('Are you sure you want to reset all CGPA data? This action cannot be undone.')) {
+                semesters = [];
+                localStorage.removeItem('cc_semesters');
+                localStorage.removeItem('cc_cgpa');
+                displaySemesters();
+                updateCGPA();
+                showFlash('All data has been reset!');
+            }
+        }
+
+        document.getElementById('semester-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const sgpa = document.getElementById('semester-sgpa').value;
+            
+            if (sgpa < 0 || sgpa > 10) {
+                alert('SGPA must be between 0 and 10');
+                return;
+            }
+            
+            addSemester(sgpa);
+            this.reset();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSemesters();
+        });
+    </script>
+</body>
+</html>

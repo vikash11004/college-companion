@@ -1,0 +1,24 @@
+{
+  "name": "college-companion",
+  "version": "1.0.0",
+  "description": "## Overview College Companion is a mobile-first web application designed to assist students in managing their academic life. The app provides features such as a CGPA tracker, assignment and exam reminders, a timetable manager, and a bunk-o-meter to track attendance.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/app": "^7.0.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/haptics": "^7.0.2",
+    "@capacitor/splash-screen": "^7.0.2",
+    "@capacitor/status-bar": "^7.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

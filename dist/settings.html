@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4895ff">
+    <title>Settings - College Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <button class="back-btn" onclick="history.back()">←</button>
+            <h1>Settings</h1>
+        </header>
+
+        <div class="card">
+            <h2>Reset</h2>
+            <button class="btn" onclick="clearAllData()" style="background: #ef4444;">Clear All Data</button>
+        </div>
+
+        <div class="card">
+            <h2>About</h2>
+            <p><strong>College Companion</strong></p>
+            <p>Version: 1.0 (Offline)</p>
+            <p>A completely offline academic management app</p>
+            <p style="margin-top: 1rem; opacity: 0.7; font-size: 0.9rem;">
+                All your data is stored locally on your device. No internet connection required.
+            </p>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-grid">
+            <a href="index.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/home.png" alt="Home"></div>
+                Home
+            </a>
+            <a href="cgpa.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                CGPA
+            </a>
+            <a href="assignments.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                Tasks
+            </a>
+            <a href="timetable.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/timetable.png" alt="Timetable"></div>
+                Schedule
+            </a>
+            <a href="settings.html" class="bottom-nav-item active">
+                <div class="bottom-nav-icon"><img src="favicons/settings.png" alt="Settings"></div>
+                Settings
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // Simple localStorage wrapper
+        const storage = {
+            getAll: function(key) {
+                try {
+                    return JSON.parse(localStorage.getItem(key)) || [];
+                } catch (e) {
+                    return [];
+                }
+            }
+        };
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
+                if (confirm('Really sure? All subjects, assignments, exams, attendance will be deleted.')) {
+                    localStorage.clear();
+                    showFlash('All data cleared');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            }
+        }
+
+        function showFlash(message, type = 'success') {
+            const flash = document.createElement('div');
+            flash.className = `flash-message flash-${type}`;
+            flash.textContent = message;
+            document.body.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

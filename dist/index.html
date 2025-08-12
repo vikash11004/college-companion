@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4895ff">
+    <title>College Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <button class="menu-btn" id="menu-btn">☰</button>
+            <div class="header-content">
+                <h1>College Companion</h1>
+                <div class="current-date" id="current-date"></div>
+            </div>
+        </header>
+
+        <!-- Side Slider Menu -->
+        <div class="side-menu" id="side-menu">
+            <div class="side-menu-header">
+                <h2>Menu</h2>
+            </div>
+            <div class="side-menu-content">
+                <a href="timetable.html" class="side-menu-item">
+                    <div class="side-menu-icon"><img src="favicons/timetable.png" alt="Timetable"></div>
+                    <div class="side-menu-text">
+                        <div class="side-menu-title">Timetable</div>
+                        <div class="side-menu-subtitle">View your schedule</div>
+                    </div>
+                </a>
+                <a href="settings.html" class="side-menu-item">
+                    <div class="side-menu-icon"><img src="favicons/settings.png" alt="Settings"></div>
+                    <div class="side-menu-text">
+                        <div class="side-menu-title">Settings</div>
+                        <div class="side-menu-subtitle">App preferences</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Menu Overlay -->
+        <div class="menu-overlay" id="menu-overlay"></div>
+
+        <!-- Side Panel Content -->
+        <div class="side-panel" id="side-panel">
+            <div class="side-panel-header">
+                <h2 id="side-panel-title">Panel</h2>
+            </div>
+            <div class="side-panel-content" id="side-panel-content">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Timetable Cover Photo (if uploaded) -->
+        <div class="timetable-preview" id="timetable-preview" style="display: none;">
+            <div class="preview-header">
+                <h3><img src="favicons/timetable.png" alt="Timetable" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;"> Your Timetable</h3>
+            </div>
+            <div class="timetable-cover">
+                <img id="timetable-cover-image" alt="Timetable Preview">
+            </div>
+        </div>
+
+        <div class="navigation-grid">
+            <a href="assignments.html" class="nav-card">
+                <div class="nav-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                <div class="nav-title">Assignments</div>
+                <div class="nav-subtitle">Manage your tasks</div>
+            </a>
+            
+            <a href="bunkometer.html" class="nav-card">
+                <div class="nav-icon"><img src="favicons/Bunkometer.png" alt="Bunkometer"></div>
+                <div class="nav-title">Bunk-o-meter</div>
+                <div class="nav-subtitle">Track attendance</div>
+            </a>
+            
+            <a href="cgpa.html" class="nav-card">
+                <div class="nav-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                <div class="nav-title">CGPA</div>
+                <div class="nav-subtitle">Calculate grades</div>
+            </a>
+            
+            <a href="exams.html" class="nav-card">
+                <div class="nav-icon"><img src="favicons/exam.png" alt="Exams"></div>
+                <div class="nav-title">Exams</div>
+                <div class="nav-subtitle">Schedule & track</div>
+            </a>
+        </div>
+
+        <div class="quote-card">
+            <p id="motivational-quote">Success is the sum of small efforts, repeated day in and day out.</p>
+        </div>
+    </div>
+
+    <script>
+        // Display current date
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Offline motivational quotes
+        const quotes = [
+            "Success is the sum of small efforts, repeated day in and day out.",
+            "The expert in anything was once a beginner.",
+            "Education is the passport to the future.",
+            "Your only limit is your mind.",
+            "Learning never exhausts the mind.",
+            "Dream big, work hard, stay focused.",
+            "Consistency is key to success.",
+            "Knowledge is power, but enthusiasm pulls the switch.",
+            "The beautiful thing about learning is that no one can take it away from you.",
+            "Education is not preparation for life; education is life itself.",
+            "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+            "The only impossible journey is the one you never begin.",
+            "Believe you can and you're halfway there.",
+            "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+            "The future belongs to those who believe in the beauty of their dreams.",
+            "It is during our darkest moments that we must focus to see the light.",
+            "The only way to do great work is to love what you do.",
+            "Life is what happens when you're busy making other plans.",
+            "The way to get started is to quit talking and begin doing.",
+            "Your time is limited, don't waste it living someone else's life.",
+            "If life were predictable it would cease to be life, and be without flavor.",
+            "If you look at what you have in life, you'll always have more.",
+            "Life is really simple, but we insist on making it complicated.",
+            "May you live all the days of your life.",
+            "The purpose of our lives is to be happy.",
+            "Life is a succession of lessons which must be lived to be understood.",
+            "You will face many defeats in life, but never let yourself be defeated.",
+            "Never let the fear of striking out keep you from playing the game.",
+            "Many of life's failures are people who did not realize how close they were to success when they gave up.",
+            "You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.",
+            "In the end, it's not the years in your life that count. It's the life in your years.",
+            "Never give up on a dream just because of the time it will take to accomplish it. The time will pass anyway.",
+            "The most difficult thing is the decision to act, the rest is merely tenacity.",
+            "What's money? A man is a success if he gets up in the morning and goes to bed at night and in between does what he wants to do.",
+            "I've learned that people will forget what you said, people will forget what you did, but people will never forget how you made them feel.",
+            "The question isn't who is going to let me; it's who is going to stop me.",
+            "Winning isn't everything, but wanting to win is.",
+            "Whether you think you can or you think you can't, you're right.",
+            "You miss 100% of the shots you don't take.",
+            "I alone cannot change the world, but I can cast a stone across the water to create many ripples.",
+            "Twenty years from now you will be more disappointed by the things that you didn't do than by the ones you did do.",
+            "It is better to be hated for what you are than to be loved for what you are not.",
+            "Whoever is happy will make others happy too.",
+            "Do not go where the path may lead, go instead where there is no path and leave a trail.",
+            "You are never too old to set another goal or to dream a new dream.",
+            "Try to be a rainbow in someone's cloud.",
+            "You do not find the happy life. You make it.",
+            "Inspiration comes from within yourself. One has to be positive. When you're positive, good things happen.",
+            "Sometimes you will never know the value of a moment until it becomes a memory.",
+            "The most wasted of days is one without laughter.",
+            "You must be the change you wish to see in the world.",
+            "Spread love everywhere you go. Let no one ever come to you without leaving happier.",
+            "When you reach the end of your rope, tie a knot in it and hang on.",
+            "Always remember that you are absolutely unique. Just like everyone else.",
+            "Don't judge each day by the harvest you reap but by the seeds that you plant.",
+            "The future belongs to those who prepare for it today.",
+            "A person who never made a mistake never tried anything new.",
+            "Strive not to be a success, but rather to be of value.",
+            "I have not failed. I've just found 10,000 ways that won't work.",
+            "A woman is like a tea bag; you never know how strong it is until it's in hot water.",
+            "Great minds discuss ideas; average minds discuss events; small minds discuss people.",
+            "If you want to lift yourself up, lift up someone else.",
+            "The difference between ordinary and extraordinary is that little extra.",
+            "With the new day comes new strength and new thoughts.",
+            "It is never too late to be what you might have been.",
+            "You are braver than you believe, stronger than you seem, and smarter than you think.",
+            "Champions train, losers complain.",
+            "The only person you are destined to become is the person you decide to be.",
+            "Go confidently in the direction of your dreams. Live the life you have imagined.",
+            "What we think, we become.",
+            "Life shrinks or expands in proportion to one's courage.",
+            "If you hear a voice within you say you cannot paint, then by all means paint and that voice will be silenced.",
+            "There is only one way to avoid criticism: do nothing, say nothing, and be nothing.",
+            "The person who says it cannot be done should not interrupt the person who is doing it.",
+            "There are no traffic jams along the extra mile.",
+            "It is never too late to be what you might have been.",
+            "A successful man is one who can lay a firm foundation with the bricks others have thrown at him.",
+            "No one can make you feel inferior without your consent.",
+            "I can't change the direction of the wind, but I can adjust my sails to always reach my destination.",
+            "If you're going through hell, keep going.",
+            "Everything you've ever wanted is on the other side of fear.",
+            "Believe that life is worth living and your belief will help create the fact.",
+            "Change your thoughts and you change your world.",
+            "If you can dream it, you can achieve it.",
+            "It always seems impossible until it's done.",
+            "Don't wait. The time will never be just right.",
+            "A year from now you may wish you had started today.",
+            "Inaction breeds doubt and fear. Action breeds confidence and courage.",
+            "You don't have to be great to get started, but you have to get started to be great.",
+            "A champion is defined not by their wins but by how they can recover when they fall.",
+            "You have been assigned this mountain to show others it can be moved.",
+            "If something is important enough, even if the odds are stacked against you, you should still do it.",
+            "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart.",
+            "A little progress each day adds up to big results.",
+            "Don't stop when you're tired. Stop when you're done.",
+            "Wake up with determination. Go to bed with satisfaction.",
+            "Do something today that your future self will thank you for.",
+            "Little things make big days.",
+            "It's going to be hard, but hard does not mean impossible.",
+            "Don't wait for opportunity. Create it.",
+            "Sometimes we're tested not to show our weaknesses, but to discover our strengths.",
+            "The key to success is to focus on goals, not obstacles.",
+            "Dream it. Wish it. Do it.",
+            "Success doesn't just find you. You have to go out and get it.",
+            "The harder you work for something, the greater you'll feel when you achieve it.",
+            "Dream bigger. Do bigger.",
+            "Don't stop until you're proud.",
+            "Your limitation—it's only your imagination.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Great things never come from comfort zones.",
+            "Dream it. Believe it. Build it.",
+            "What seems impossible today will one day become your warm-up.",
+            "Turn your wounds into wisdom.",
+            "The comeback is always stronger than the setback.",
+            "You didn't come this far to only come this far.",
+            "Champions don't become champions in the ring. They become champions in their training.",
+            "If you want something you never had, you have to do something you've never done.",
+            "Success is not about the destination, it's about the journey.",
+            "Every accomplishment starts with the decision to try.",
+            "You are capable of more than you know.",
+            "The only thing standing between you and your goal is the story you keep telling yourself.",
+            "Difficult roads often lead to beautiful destinations.",
+            "The pain you feel today will be the strength you feel tomorrow.",
+            "Every expert was once a beginner.",
+            "You can't use up creativity. The more you use, the more you have.",
+            "Failure is not the opposite of success; it's part of success.",
+            "The best time to plant a tree was 20 years ago. The second best time is now.",
+            "You are never too small to make a difference.",
+            "The only impossible journey is the one you never begin.",
+            "Success is walking from failure to failure with no loss of enthusiasm.",
+            "The way I see it, if you want the rainbow, you gotta put up with the rain.",
+            "All our dreams can come true if we have the courage to pursue them.",
+            "Happiness is not something ready made. It comes from your own actions.",
+            "If you're offered a seat on a rocket ship, don't ask what seat! Just get on.",
+            "First, have a definite, clear practical ideal; a goal, an objective.",
+            "If the wind will not serve, take to the oars.",
+            "You can't fall if you don't climb. But there's no joy in living your whole life on the ground.",
+            "We generate fears while we sit. We overcome them by action.",
+            "Whether you think you can or think you can't, you're right.",
+            "I would rather die of passion than of boredom.",
+            "A truly rich man is one whose children run into his arms when his hands are empty.",
+            "It is not what you do for your children, but what you have taught them to do for themselves.",
+            "Build your own dreams, or someone else will hire you to build theirs.",
+            "The battles that count aren't the ones for gold medals. The struggles within yourself are.",
+            "Education costs money. But then so does ignorance.",
+            "I have learned throughout my life as a composer chiefly through my mistakes and pursuits of false assumptions, not by my exposure to founts of wisdom and knowledge.",
+            "Setting goals is the first step in turning the invisible into the visible.",
+            "All progress takes place outside the comfort zone.",
+            "You can only become truly accomplished at something you love.",
+            "We become what we think about most of the time, and that's the strangest secret.",
+            "You are what you do, not what you say you'll do.",
+            "If you genuinely want something, don't wait for it — teach yourself to be impatient.",
+            "The true meaning of life is to plant trees, under whose shade you do not expect to sit.",
+            "Many of life's failures are people who did not realize how close they were to success.",
+            "You have power over your mind—not outside events. Realize this, and you will find strength.",
+            "The best revenge is massive success.",
+            "People begin to become successful the minute they decide to be.",
+            "Don't let what you cannot do interfere with what you can do.",
+            "You have to learn the rules of the game. And then you have to play better than anyone else.",
+            "A goal is not always meant to be reached, it often serves simply as something to aim at.",
+            "Success is peace of mind, which is a direct result of self-satisfaction.",
+            "I've missed more than 9000 shots in my career. I've lost almost 300 games.",
+            "Some people dream of success, while other people get up every morning and make it happen.",
+            "The successful warrior is the average man with laser-like focus.",
+            "Develop success from failures. Discouragement and failure are two of the surest stepping stones to success.",
+            "If you don't design your own life plan, chances are you'll fall into someone else's plan.",
+            "The first step toward success is taken when you refuse to be a captive of the environment.",
+            "People who succeed have momentum. The more they succeed, the more they want to succeed.",
+            "When you stop chasing the wrong things, you give the right things a chance to catch you.",
+            "Don't be afraid to give up the good to go for the great.",
+            "No masterpiece was ever created by a lazy artist.",
+            "Happiness is a butterfly, which when pursued, is always beyond your grasp.",
+            "If you can't explain it simply, you don't understand it well enough.",
+            "Blessed are the curious for they shall have adventures.",
+            "It's not about perfect. It's about effort.",
+            "Experience is a hard teacher because she gives the test first, the lesson afterward.",
+            "Reading is to the mind what exercise is to the body.",
+            "I am not a product of my circumstances. I am a product of my decisions.",
+            "Every morning you have two choices: continue to sleep with your dreams, or wake up and chase them.",
+            "This is a wonderful day. I've never seen this one before.",
+            "The job will teach you how to do it.",
+            "Don't let yesterday take up too much of today.",
+            "Experience is what you get when you didn't get what you wanted.",
+            "When you have confidence, you can have a lot of fun. And when you have fun, you can do amazing things.",
+            "The most certain way to succeed is always to try just one more time.",
+            "Life is like riding a bicycle. To keep your balance, you must keep moving.",
+            "Just one small positive thought in the morning can change your whole day.",
+            "Opportunities don't happen, you create them.",
+            "Love your family, work super hard, live your passion.",
+            "It is never too late to be what you might have been."
+        ];
+
+        function displayRandomQuote() {
+            const quote = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('motivational-quote').textContent = quote;
+        }
+
+        function loadTimetablePreview() {
+            const timetableData = localStorage.getItem('timetable');
+            const timetableDimensions = JSON.parse(localStorage.getItem('timetable-dimensions') || '{}');
+            const timetablePreview = document.getElementById('timetable-preview');
+            const timetableCoverImage = document.getElementById('timetable-cover-image');
+            const timetableCover = document.querySelector('.timetable-cover');
+            
+            if (timetableData) {
+                timetableCoverImage.src = timetableData;
+                timetablePreview.style.display = 'block';
+                
+                // Apply dynamic dimensions if available
+                if (timetableDimensions.width && timetableDimensions.height) {
+                    // Get the actual container width
+                    const containerWidth = document.querySelector('.timetable-preview').clientWidth - 32; // Account for padding (1rem * 2)
+                    const maxWidth = Math.min(containerWidth, 600, window.innerWidth - 80); // Multiple constraints
+                    const aspectRatio = timetableDimensions.width / timetableDimensions.height;
+                    
+                    let displayWidth = Math.min(timetableDimensions.width, maxWidth);
+                    let displayHeight = displayWidth / aspectRatio;
+                    
+                    // Simply set dimensions - let CSS handle centering
+                    timetableCover.style.width = displayWidth + 'px';
+                    timetableCover.style.height = displayHeight + 'px';
+                    
+                    console.log('Container width:', containerWidth, 'Display width:', displayWidth);
+                    
+                    // Ensure image fills the container exactly
+                    timetableCoverImage.style.width = '100%';
+                    timetableCoverImage.style.height = '100%';
+                    timetableCoverImage.style.objectFit = 'fill';
+                } else {
+                    // Fallback to default styling if no dimensions saved
+                    timetableCoverImage.style.objectFit = 'cover';
+                }
+            } else {
+                timetablePreview.style.display = 'none';
+            }
+        }
+
+        // Side Menu Functionality
+        function toggleMenu() {
+            const sideMenu = document.getElementById('side-menu');
+            const menuOverlay = document.getElementById('menu-overlay');
+            
+            sideMenu.classList.toggle('active');
+            menuOverlay.classList.toggle('active');
+        }
+
+        function closeMenu() {
+            const sideMenu = document.getElementById('side-menu');
+            const menuOverlay = document.getElementById('menu-overlay');
+            
+            sideMenu.classList.remove('active');
+            menuOverlay.classList.remove('active');
+        }
+
+        function openSidePanel(title) {
+            const sidePanel = document.getElementById('side-panel');
+            const panelTitle = document.getElementById('side-panel-title');
+            
+            panelTitle.textContent = title;
+            sidePanel.classList.add('active');
+            closeMenu();
+        }
+
+        function closeSidePanel() {
+            const sidePanel = document.getElementById('side-panel');
+            sidePanel.classList.remove('active');
+        }
+
+        function showFlash(message, type = 'success') {
+            const flash = document.createElement('div');
+            flash.className = `flash-message flash-${type}`;
+            flash.textContent = message;
+            flash.style.cssText = `
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                background: ${type === 'success' ? '#4caf50' : '#f44336'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                z-index: 10000;
+                opacity: 1;
+                transition: opacity 0.3s ease;
+            `;
+            document.body.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 300);
+            }, 300);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDate();
+            displayRandomQuote();
+            loadTimetablePreview();
+            
+            // Menu event listeners
+            document.getElementById('menu-btn').addEventListener('click', toggleMenu);
+            document.getElementById('menu-overlay').addEventListener('click', closeMenu);
+        });
+    </script>
+</body>
+</html>

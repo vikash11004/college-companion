@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4895ff">
+    <title>Bunk-o-meter - College Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1>Bunkometer</h1>
+        </header>
+
+        <div class="card">
+            <h2><img src="favicons/Bunkometer.png" alt="Bunkometer" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px;"> Overall Attendance</h2>
+            
+            <div class="form-group">
+                <label for="total-classes-happened">Total Classes Happened:</label>
+                <input type="number" id="total-classes-happened" placeholder="0" min="0" value="0" oninput="calculateAttendance()">
+            </div>
+            
+            <div class="form-group">
+                <label for="total-classes-attended">Total Classes Attended:</label>
+                <input type="number" id="total-classes-attended" placeholder="0" min="0" value="0" oninput="calculateAttendance()">
+            </div>
+            
+            <div class="attendance-display">
+                <div class="percentage-circle">
+                    <span id="attendance-percentage">0%</span>
+                </div>
+                
+                <div class="attendance-advice">
+                    <div id="bunk-advice" class="advice-item"></div>
+                    <div id="attend-advice" class="advice-item"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="bottom-nav-grid">
+            <a href="index.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/home.png" alt="Home"></div>
+                Home
+            </a>
+            <a href="cgpa.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/CGPA.png" alt="CGPA"></div>
+                CGPA
+            </a>
+            <a href="assignments.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/assignment.png" alt="Assignments"></div>
+                Tasks
+            </a>
+            <a href="timetable.html" class="bottom-nav-item">
+                <div class="bottom-nav-icon"><img src="favicons/timetable.png" alt="Timetable"></div>
+                Schedule
+            </a>
+            <a href="bunkometer.html" class="bottom-nav-item active">
+                <div class="bottom-nav-icon"><img src="favicons/Bunkometer.png" alt="Bunkometer"></div>
+                Bunko
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        function loadAttendanceData() {
+            const totalHappened = localStorage.getItem('total-classes-happened') || '0';
+            const totalAttended = localStorage.getItem('total-classes-attended') || '0';
+            
+            document.getElementById('total-classes-happened').value = totalHappened;
+            document.getElementById('total-classes-attended').value = totalAttended;
+            
+            calculateAttendance();
+        }
+        
+        function saveAttendanceData() {
+            const totalHappened = document.getElementById('total-classes-happened').value;
+            const totalAttended = document.getElementById('total-classes-attended').value;
+            
+            localStorage.setItem('total-classes-happened', totalHappened);
+            localStorage.setItem('total-classes-attended', totalAttended);
+        }
+        
+        function calculateAttendance() {
+            const totalHappened = parseInt(document.getElementById('total-classes-happened').value) || 0;
+            const totalAttended = parseInt(document.getElementById('total-classes-attended').value) || 0;
+            
+            // Validation
+            if (totalAttended > totalHappened) {
+                document.getElementById('total-classes-attended').value = totalHappened;
+                return;
+            }
+            
+            // Save data
+            saveAttendanceData();
+            
+            // Calculate percentage
+            const percentage = totalHappened > 0 ? Math.round((totalAttended / totalHappened) * 100) : 0;
+            document.getElementById('attendance-percentage').textContent = percentage + '%';
+            
+            // Update percentage circle color
+            const percentageElement = document.getElementById('attendance-percentage');
+            percentageElement.className = percentage >= 75 ? 'good' : 'danger';
+            
+            // Calculate advice
+            const bunkAdvice = document.getElementById('bunk-advice');
+            const attendAdvice = document.getElementById('attend-advice');
+            
+            if (percentage >= 75) {
+                // Calculate how many classes can be bunked
+                const canBunk = calculateCanBunk(totalAttended, totalHappened);
+                bunkAdvice.innerHTML = `<span class="good">✅ You can bunk <strong>${canBunk}</strong> classes and still maintain 75%</span>`;
+                attendAdvice.innerHTML = '';
+            } else {
+                // Calculate how many classes need to attend
+                const needToAttend = calculateNeedToAttend(totalAttended, totalHappened);
+                bunkAdvice.innerHTML = '';
+                attendAdvice.innerHTML = `<span class="danger">You need to attend <strong>${needToAttend}</strong> consecutive classes to reach 75%</span>`;
+            }
+        }
+        
+        function calculateCanBunk(attended, happened) {
+            if (happened === 0) return 0;
+            
+            // How many future classes can be bunked while maintaining 75%
+            let canBunk = 0;
+            for (let future = 1; future <= 100; future++) {
+                const futurePercentage = (attended / (happened + future)) * 100;
+                if (futurePercentage >= 75) {
+                    canBunk = future;
+                } else {
+                    break;
+                }
+            }
+            return canBunk;
+        }
+        
+        function calculateNeedToAttend(attended, happened) {
+            if (happened === 0) return 0;
+            
+            // How many consecutive classes need to be attended to reach 75%
+            let needToAttend = 0;
+            for (let future = 1; future <= 200; future++) {
+                const futurePercentage = ((attended + future) / (happened + future)) * 100;
+                if (futurePercentage >= 75) {
+                    needToAttend = future;
+                    break;
+                }
+            }
+            return needToAttend;
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAttendanceData();
+        });
+    </script>
+</body>
+</html>
