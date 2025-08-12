@@ -41,7 +41,7 @@ capacitor.config.ts # Capacitor configuration
 ## Build & Run
 
 ### Install APK (Easiest)
-1. Install the APK from `android/app/build/outputs/apk/debug/app-debug.apk`
+1. Install the APK from https://github.com/vikash11004/college-companion/releases/download/v1.0.0/college-companion.apk
 2. App works immediately - no setup needed!
 
 ### Development Build
